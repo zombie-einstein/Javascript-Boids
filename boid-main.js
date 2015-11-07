@@ -86,6 +86,7 @@ var maxVelocity = 2;
 var maxSteering = 0.05;
 var detectionRange = 50;
 var collisionRange = 25;
+var detectAngle = 10;
 var detectionAngle = Math.cos(3 * Math.PI / 4); 
 var c = document.getElementById("myCanvas");
 var ctx = c.getContext("2d");

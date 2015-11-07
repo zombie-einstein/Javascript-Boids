@@ -25,15 +25,13 @@ boid.prototype.wallAvoid = function () {
 	var r = 0;
 	this.predictedPosition.assign(this.position);
 	this.predictedPosition.add(this.predictionVec);
-	// This check is for the borders, but could be generalised to other
-	// shapes as long as this check can be performed
-	//while ( this.predictedPosition.x > xWidth || this.predictedPosition.x < 0 || this.predictedPosition.y > yWidth || this.predictedPosition.y < 0 ){
+	// This check is for the borders and also for circular obstacles
 	while ( this.predictedPosition.boundaryDetect() == true || this.predictedPosition.obstacleDetect(5) == true ) {
 		this.predictedPosition.subtract(this.predictionVec);
-		this.predictionVec.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/8);
+		this.predictionVec.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
 		this.predictedPosition.add(this.predictionVec);		
 		r += 1;
-		if (r > 14 ){break;}	// Breaks out of loop if the boid can't find an exit!
+		if (r > detectAngle-2 ){break;}	// Breaks out of loop if the boid can't find an exit (has checked all 360dg)!
 	}	
 }
 // Give boid random initial position and velocity
