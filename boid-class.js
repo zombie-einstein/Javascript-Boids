@@ -63,7 +63,7 @@ boid.prototype.render = function() {
 	ctx.moveTo(this.position.x+this.triangle[0].x,this.position.y+this.triangle[0].y);
 	ctx.lineTo(this.position.x+this.triangle[1].x,this.position.y+this.triangle[1].y);
 	ctx.lineTo(this.position.x+this.triangle[2].x,this.position.y+this.triangle[2].y);
-	ctx.fillStyle = '#FFFFFF'
+	ctx.fillStyle = '#FF9900'
 	ctx.fill();					
 }
 // Reset the averages and counts
