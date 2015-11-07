@@ -23,6 +23,7 @@ canvas	{	background-color: #E5F0FF;
 
 div	{	background-color: #007ACC;
 		padding:10px;
+		border-width: 0px;
 		height:80px;
 		color: #FFFFFF;
 	}
@@ -31,6 +32,7 @@ html, body {	width:  100%;
 		height: 100%;
 		margin: 0px;
 		overflow: hidden;
+		background-color: #007ACC;
 	}
 	
 button	{	background-color: #FFFFFF;

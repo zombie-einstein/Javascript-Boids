@@ -14,18 +14,21 @@ function boid(){
 	this.numNeighbours = 0;
 	this.numCollisions = 0;
 	this.triangle = [new vec(0,0), new vec(0,0), new vec(0,0)];
-	this.leftOrRight = Math.round(Math.random())*2 -1; // Randomizes the boids tendency to turn left or right first 
+	// Randomizes the boids tendency to turn left or right first
+	// when encountering a boundary / barrier
+	this.leftOrRight = Math.round(Math.random())*2 -1; 
 }
 // Avoid the walls
 boid.prototype.wallAvoid = function () {
 	this.predictionVec.assign(this.velocity);
-	this.predictionVec.setMagnitude(detectionRange);
+	this.predictionVec.setMagnitude(collisionRange);
 	var r = 0;
 	this.predictedPosition.assign(this.position);
 	this.predictedPosition.add(this.predictionVec);
 	// This check is for the borders, but could be generalised to other
 	// shapes as long as this check can be performed
-	while ( this.predictedPosition.x > xWidth || this.predictedPosition.x < 0 || this.predictedPosition.y > yWidth || this.predictedPosition.y < 0 ){
+	//while ( this.predictedPosition.x > xWidth || this.predictedPosition.x < 0 || this.predictedPosition.y > yWidth || this.predictedPosition.y < 0 ){
+	while ( this.predictedPosition.boundaryDetect() == true || this.predictedPosition.obstacleDetect(5) == true ) {
 		this.predictedPosition.subtract(this.predictionVec);
 		this.predictionVec.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/8);
 		this.predictedPosition.add(this.predictionVec);		
@@ -36,17 +39,20 @@ boid.prototype.wallAvoid = function () {
 // Give boid random initial position and velocity
 boid.prototype.initial = function () {
 	var randomVecA = new vec( Math.random()*(xWidth-1) +1 , Math.random()*(yWidth-1) +1 );
-	this.position.add(randomVecA);
+	this.position = randomVecA;
+	//this.position.add(randomVecA);
 	var randomVecB = new vec( Math.random()*2*maxVelocity - maxVelocity , Math.random()*2*maxVelocity- maxVelocity );
-	this.velocity.add(randomVecB);		
+	this.velocity = randomVecB;
+	//this.velocity.add(randomVecB);		
 }
-// Update Boid position function ( add velocity to position )
+// Update Boid position function 
+//( i.e. add acceleration to the velocity, and velocity to position )
 boid.prototype.move = function () {
 	this.velocity.add(this.accVec);
 	this.velocity.maxLimit(maxVelocity);
 	this.position.add(this.velocity);
 }
-// Work out triangle points
+// Work out triangle render points by scaling and rotating velocity vector
 boid.prototype.triVec = function() {
 	this.triangle[0].assign(this.velocity);
 	this.triangle[0].setMagnitude(5+3);
@@ -63,10 +69,10 @@ boid.prototype.render = function() {
 	ctx.moveTo(this.position.x+this.triangle[0].x,this.position.y+this.triangle[0].y);
 	ctx.lineTo(this.position.x+this.triangle[1].x,this.position.y+this.triangle[1].y);
 	ctx.lineTo(this.position.x+this.triangle[2].x,this.position.y+this.triangle[2].y);
-	ctx.fillStyle = '#FF9900'
+	ctx.fillStyle = '#FF9900';
 	ctx.fill();					
 }
-// Reset the averages and counts
+// Reset the neighbour averages and counts
 boid.prototype.reset = function() {
 	this.accVec.reset();
 	this.neighbourAvg.reset();
@@ -87,6 +93,8 @@ boid.prototype.collisionAvgs = function(neighbour,d){
 	var tempVec = new vec(0,0);
 	tempVec.assign(this.position);
 	tempVec.subtract(neighbour.position);
+	// Contributions are weighted by their distance
+	// i.e. the closer the boid the stronger it's contribution
 	tempVec.scale(1/d);
 	this.collisionsAvg.cumAvg(tempVec,this.numCollisions);
 }
@@ -116,16 +124,16 @@ boid.prototype.acceleration = function(){
 			steerAvoid.subtract(this.velocity);
 			steerAvoid.maxLimit(maxSteering);
 		}
-		// Scale steering contributions by weight
+		// Scale steering contributions by arbitary weights
 		steerCohesion.scale(1);
 		steerAlign.scale(1.5);
 		steerAvoid.scale(2);
-		// Calculate acceleration
+		// Calculate overall acceleration due to neighbours
 		this.accVec.add(steerCohesion);
 		this.accVec.add(steerAlign);
 		this.accVec.add(steerAvoid);
 	}
-	// Avoid the walls
+	// Avoid the walls and objects and add effect to acceleration
 	this.wallAvoid();
 	this.predictionVec.setMagnitude(maxVelocity);
 	this.predictionVec.subtract(this.velocity);

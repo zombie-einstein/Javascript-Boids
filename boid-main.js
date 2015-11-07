@@ -5,11 +5,14 @@
 // Square of number
 function square(x){return x*x;}
 // Neighbour check function
-function neighbourTest(){	
-	for ( var n = 0; n < numBoids-1; n++ ){	// Start at 0, interate through to array length-1
-	for ( var m = n+1; m < numBoids; m++ ){  // Start at 1 through to array length, this means all pairs are checked
+function neighbourTest(){
+	// The arrangement of these loops means that neighbour checks are only
+	// made once between pairs of boids, slightly more effecient than
+	// check all boids for each boid	
+	for ( var n = 0; n < numBoids-1; n++ ){
+	for ( var m = n+1; m < numBoids; m++ ){ 
 		// This checks that neighbours are both within a certain range
-		// Check angle is more involved as it requires checking the angle in boh directions
+		// Check angle is more involved as it requires checking the angle in both directions
 		var d = Boids[n].position.squareDistance(Boids[m].position);
 		if ( d < square(detectionRange) ){
 				Boids[n].neighbourAvgs(Boids[m]); 
@@ -22,6 +25,7 @@ function neighbourTest(){
 // Animation function
 function animate_b(){
 	ctx.clearRect(0,0,xWidth,yWidth);
+	for( var n = 0; n < numObstacles; n++){Obstacles[n].render();}
 	for( var n = 0; n < numBoids; n++ ){ Boids[n].reset(); }
 	neighbourTest();
 	for( var n = 0; n < numBoids; n++ ){
@@ -31,14 +35,21 @@ function animate_b(){
 	}
 
 }
-// Reset Boid function
+// Reset Boids to random initial positions and velocities
 function resetBoids(){
 	ctx.clearRect(0,0,xWidth,yWidth);
+	makeObstacles();
+	for( var n = 0; n < numObstacles; n++){Obstacles[n].render();}
 	for( var n = 0; n < numBoids; n++ ){
 		Boids[n]= new boid();
-		Boids[n].initial();
+		var test = 0;
+		do {Boids[n].initial(); test++;}
+		// Check if boid is inside an obstacle
+		// Re-roll position if it is
+		while (Boids[n].position.obstacleDetect(collisionRange) === true);
 		Boids[n].render();
-}}
+	}
+}
 // Run simulation function
 function startSim(){ myVar = setInterval (animate_b, 25); }
 // Pausi Simulation function
@@ -62,9 +73,15 @@ function getMousePos(canvas, evt) {
           y: evt.clientY - rect.top
         };
       }
+// Generate circular obstacles for boids
+function makeObstacles() {
+	for (var n = 0; n < numObstacles; n++){
+		Obstacles[n] = new obstacle(Math.random()*80+20, Math.random()*(xWidth-1) +1, Math.random()*(yWidth-1) +1);
+	}}
 //******* Running simulation starts here *************
 
 var numBoids = 60;
+var numObstacles = 2;
 var maxVelocity = 2;
 var maxSteering = 0.05;
 var detectionRange = 50;
@@ -72,15 +89,15 @@ var collisionRange = 25;
 var detectionAngle = Math.cos(3 * Math.PI / 4); 
 var c = document.getElementById("myCanvas");
 var ctx = c.getContext("2d");
-ctx.canvas.width  = window.innerWidth-2;
-ctx.canvas.height = window.innerHeight-102;
+ctx.canvas.width  = window.innerWidth;
+ctx.canvas.height = window.innerHeight-100;
 var xWidth = c.width;
 var yWidth = c.height;
 var Boids = [];
-var myVar 
+var Obstacles = [];
+var myVar;
 
-resetBoids()
-
+resetBoids();
 
 
 

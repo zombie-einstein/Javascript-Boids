@@ -9,6 +9,9 @@
 
 <body>
 
+<canvas id="myCanvas" width="1000" height="500" onclick="addBoid(event)" >
+Too bad your browser does not support the HTML5 canvas tag.</canvas>
+
 <div>
 <h2> Javascript Boids  </h3>
 <button onclick="resetBoids()">Reset</button>
@@ -17,13 +20,11 @@
 <p> Click on the screen to add new boids </p>
 </div>
 
-<canvas id="myCanvas" width="1000" height="500" onclick="addBoid(event)" >
-Too bad your browser does not support the HTML5 canvas tag.</canvas>
-
-
 <script src="vector-utils.js"></script>
 <script src="boid-class.js"></script>
+<script src="obstacle-class.js"></script>
 <script src="boid-main.js"></script>
 
 </body>
+
 </html>
