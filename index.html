@@ -1,18 +1,26 @@
 <!DOCTYPE html>
 <html>
 
+<head>
+<meta charset="utf-8">
+<title>Javascript Boids</title>
+<link rel="stylesheet" href="main.css">
+</head>
+
 <body>
 
-<h3> Javascript Boid  </h3>
-
-<p> Click to add new boids </p>
-
+<div>
+<h2> Javascript Boids  </h3>
+<span>
 <button onclick="resetBoids()">Reset</button>
 <button onclick="startSim()">Start</button>
 <button onclick="pauseSim()">Stop</button>
-<br>
-<canvas id="myCanvas" width="1000" height="500" style="border:2px solid #d3d3d3;" onclick="addBoid(event)" >
-Your browser does not support the HTML5 canvas tag.</canvas>
+<p> Click on the screen to add new boids </p>
+</span>
+</div>
+
+<canvas id="myCanvas" width="1000" height="500" onclick="addBoid(event)" >
+Too bad your browser does not support the HTML5 canvas tag.</canvas>
 
 
 <script src="vector-utils.js"></script>

@@ -1,0 +1,22 @@
+
+body	{
+		background-color: #b0c4de;
+		padding:0px;
+		border:0px;
+	}
+
+h2	{	font-family:Arial;
+	}
+
+p	{	font-family:Arial;
+		display: inline;
+	}
+
+canvas	{	background-color: #e5e5e5;
+		border:0px;
+		margin:0px;
+	}
+
+div	{	background-color: #82C1FF;
+		padding:10px;
+	}
