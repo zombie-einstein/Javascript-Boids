@@ -9,15 +9,21 @@
 
 <body onresize = "resizeFunction()">
 
-<canvas id="myCanvas" width="1000" height="500" onclick="addBoid(event)" >
+<canvas id="myCanvas" onclick="addBoid(event)" >
 Too bad your browser does not support the HTML5 canvas tag.</canvas>
 
-<div>
-<h2> Javascript Boids  </h3>
+<div id="header">
+<h2> Javascript Boids:  </h3>
+<p> Click on the screen to add new boids. </p>
+</div>
+
+<div id="buttons">
 <button onclick="resetBoids()">Reset</button>
 <button onclick="startSim()">Start</button>
 <button onclick="pauseSim()">Stop</button>
-<p> Click on the screen to add new boids. Reload the page to resize to window. </p>
+<form>
+Num Obstacles: <input type="number" value="3" id="obstacles" onchange="changObstacles()" max="10" min="0" size="2" maxlength="2">
+</form>
 </div>
 
 <script src="vector-utils.js"></script>

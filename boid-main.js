@@ -51,9 +51,20 @@ function resetBoids(){
 	}
 }
 // Run simulation function
-function startSim(){ myVar = setInterval (animate_b, 25); }
-// Pausi Simulation function
-function pauseSim(){clearInterval(myVar);}
+function startSim(){ 
+	if( started == false ){ 
+	myVar = setInterval (animate_b, 25); 
+	started = true; 
+	stopped = false; }
+	else { return; }
+}
+// Pause Simulation function
+function pauseSim(){
+	if( stopped == false ){ 
+	clearInterval(myVar);
+	stopped = true;
+	started = false;}
+}
 // Add boid at mouse click
 function addBoid(event){
 	var mousePos = getMousePos(canvas, event);
@@ -96,10 +107,15 @@ function resizeFunction() {
 		Boids[n].render();
 	}
 }
+// Change the number of obstacles
+function changObstacles (){
+	numObstacles = document.getElementById("obstacles").value;	
+	resetBoids();
+}
 //******* Running simulation starts here *************
 
 var numBoids = 60;		// Number of Boids
-var numObstacles = 2;		// Number of circular obstacles on canvas
+var numObstacles = document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
 var maxVelocity = 2;		// Max velocity of the Boids
 var maxSteering = 0.05;		// The maximum steering force allowed
 var detectionRange = 50;	// Range at which Boids become neigbours
@@ -115,6 +131,8 @@ var yWidth = canvas.height;
 var Boids = [];
 var Obstacles = [];
 var myVar;
+var stopped = true;
+var started = false;
 
 resetBoids();
 
