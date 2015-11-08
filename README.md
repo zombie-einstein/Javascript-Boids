@@ -13,9 +13,7 @@ Additionally there is a steering rule to avoid the walls. It does this by predic
 Improvements and possible additions to be made:
 
 - Currently boids have a tendency to check in one direction first when encountering a boundary, ideally this should be randomized.
-- A cleaner way of resizing the window area.
 - Add some form of predeator? Would need some sort of hunting algorithm.
-- Some sort of additional controls? Number of boids, or flocking parameters.
 - Some sort of analytics, e.g. average vector etc.
 - Additional randomness in each boids max velocity turning, flocking parameters etc.
 

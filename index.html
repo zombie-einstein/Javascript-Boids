@@ -10,20 +10,31 @@
 <body onresize = "resizeFunction()">
 
 <canvas id="myCanvas" onclick="addBoid(event)" >
-Too bad your browser does not support the HTML5 canvas tag.</canvas>
+Too bad your browser does not support the HTML5 canvas tag.
+</canvas>
+
+<div id="wrapper">
 
 <div id="header">
-<h2> Javascript Boids:  </h3>
-<p> Click on the screen to add new boids. </p>
+<h2> Javascript Boids:  </h2>
+<p> Made by zombie-einstein. </p>
+<p> Click to add boids. </p>
+<p> Obstacles are randomly placed. </p>
 </div>
 
 <div id="buttons">
+<h2> Controls:  </h2>
 <button onclick="resetBoids()">Reset</button>
 <button onclick="startSim()">Start</button>
 <button onclick="pauseSim()">Stop</button>
 <form>
-Num Obstacles: <input type="number" value="3" id="obstacles" onchange="changObstacles()" max="10" min="0" size="2" maxlength="2">
+Num Obstacles: <input type="number" value="3" id="obstacles" onchange="changObstacles()" max="10" min="0" size="2">
 </form>
+</div>
+
+<div id="info">
+</div>
+
 </div>
 
 <script src="vector-utils.js"></script>
