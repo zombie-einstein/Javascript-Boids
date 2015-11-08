@@ -39,6 +39,7 @@ canvas	{	background-color: #E5F0FF;
 		margin:3px;
 		color: #FFFFFF;
 		box-sizing: border-box;
+		overflow: auto;
 	}
 	
 #buttons{	background-color: #007ACC;
@@ -53,6 +54,7 @@ canvas	{	background-color: #E5F0FF;
 		margin-left:0px;
 		color: #FFFFFF;
 		box-sizing: border-box;
+		overflow: auto;
 	}
 
 #info{	background-color: #007ACC;
@@ -64,6 +66,7 @@ canvas	{	background-color: #E5F0FF;
 		margin:3px;
 		color: #FFFFFF;
 		box-sizing: border-box;
+		overflow: auto;
 	}
 
 html, body {	width:  100%;

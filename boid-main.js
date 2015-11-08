@@ -109,8 +109,12 @@ function resizeFunction() {
 }
 // Change the number of obstacles
 function changObstacles (){
-	numObstacles = document.getElementById("obstacles").value;	
-	resetBoids();
+	if ( document.getElementById("obstacles").value > document.getElementById("obstacles").max ){
+		return; }
+	else{	
+		numObstacles = document.getElementById("obstacles").value;	
+		resetBoids();
+	}
 }
 //******* Running simulation starts here *************
 
