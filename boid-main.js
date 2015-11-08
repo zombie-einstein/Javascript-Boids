@@ -56,7 +56,8 @@ function startSim(){ myVar = setInterval (animate_b, 25); }
 function pauseSim(){clearInterval(myVar);}
 // Add boid at mouse click
 function addBoid(event){
-	var mousePos = getMousePos(c, event);
+	var mousePos = getMousePos(canvas, event);
+	if (mousePos.obstacleDetect(5) == true){return;}
 	var temp = new boid();
 	Boids.push(temp);
 	Boids[Boids.length-1].initial();
@@ -68,32 +69,49 @@ function addBoid(event){
 // Mouse position relative to canvas
 function getMousePos(canvas, evt) {
         var rect = canvas.getBoundingClientRect();
-        return {
-          x: evt.clientX - rect.left,
-          y: evt.clientY - rect.top
-        };
-      }
+	var mousePos = new vec(evt.clientX - rect.left,evt.clientY - rect.top);
+	return mousePos;
+}
 // Generate circular obstacles for boids
 function makeObstacles() {
 	for (var n = 0; n < numObstacles; n++){
 		Obstacles[n] = new obstacle(Math.random()*80+20, Math.random()*(xWidth-1) +1, Math.random()*(yWidth-1) +1);
 	}}
+// If the window is resized, resize the canvas and shift all the elements
+function resizeFunction() {
+	var xScaling = window.innerWidth / canvas.width ;
+	var yScaling = ( window.innerHeight-100 ) / canvas.height ;
+	ctx.canvas.width  = window.innerWidth;
+	ctx.canvas.height = window.innerHeight-100;
+	xWidth = canvas.width;
+	yWidth = canvas.height;
+	for( var n = 0; n < numObstacles; n++){
+		Obstacles[n].centre.x = xScaling * Obstacles[n].centre.x;
+		Obstacles[n].centre.y = yScaling * Obstacles[n].centre.y;
+		Obstacles[n].render();
+	}
+	for( var n = 0; n < numBoids; n++ ){
+		Boids[n].position.x = xScaling * Boids[n].position.x;
+		Boids[n].position.y = yScaling * Boids[n].position.y;
+		Boids[n].render();
+	}
+}
 //******* Running simulation starts here *************
 
-var numBoids = 60;
-var numObstacles = 2;
-var maxVelocity = 2;
-var maxSteering = 0.05;
-var detectionRange = 50;
-var collisionRange = 25;
-var detectAngle = 10;
+var numBoids = 60;		// Number of Boids
+var numObstacles = 2;		// Number of circular obstacles on canvas
+var maxVelocity = 2;		// Max velocity of the Boids
+var maxSteering = 0.05;		// The maximum steering force allowed
+var detectionRange = 50;	// Range at which Boids become neigbours
+var collisionRange = 25;	// Range at which boid will be avoided
+var detectAngle = 10;		// Number of test vector angles for collision algorith
 var detectionAngle = Math.cos(3 * Math.PI / 4); 
-var c = document.getElementById("myCanvas");
-var ctx = c.getContext("2d");
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight-100;
-var xWidth = c.width;
-var yWidth = c.height;
+var xWidth = canvas.width;
+var yWidth = canvas.height;
 var Boids = [];
 var Obstacles = [];
 var myVar;
