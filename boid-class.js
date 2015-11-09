@@ -21,7 +21,7 @@ function boid(){
 // Avoid the walls
 boid.prototype.wallAvoid = function () {
 	this.predictionVec.assign(this.velocity);
-	this.predictionVec.setMagnitude(collisionRange);
+	this.predictionVec.setMagnitude(detectionRange);
 	var r = 0;
 	this.predictedPosition.assign(this.position);
 	this.predictedPosition.add(this.predictionVec);
@@ -136,6 +136,6 @@ boid.prototype.acceleration = function(){
 	this.predictionVec.setMagnitude(maxVelocity);
 	this.predictionVec.subtract(this.velocity);
 	this.predictionVec.maxLimit(maxSteering);
-	this.predictionVec.scale(8);
+	this.predictionVec.scale(10);
 	this.accVec.add(this.predictionVec);
 }

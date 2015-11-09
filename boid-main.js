@@ -121,10 +121,10 @@ function changObstacles (){
 var numBoids = 60;		// Number of Boids
 var numObstacles = document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
 var maxVelocity = 2;		// Max velocity of the Boids
-var maxSteering = 0.05;		// The maximum steering force allowed
+var maxSteering = 0.01;		// The maximum steering force allowed
 var detectionRange = 50;	// Range at which Boids become neigbours
 var collisionRange = 25;	// Range at which boid will be avoided
-var detectAngle = 10;		// Number of test vector angles for collision algorith
+var detectAngle = 16;		// Number of test vector angles for collision algorith
 var detectionAngle = Math.cos(3 * Math.PI / 4); 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
