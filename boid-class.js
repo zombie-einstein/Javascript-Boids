@@ -26,7 +26,7 @@ boid.prototype.wallAvoid = function () {
 	this.predictedPosition.assign(this.position);
 	this.predictedPosition.add(this.predictionVec);
 	// This check is for the borders and also for circular obstacles
-	while ( this.predictedPosition.boundaryDetect() == true || this.predictedPosition.obstacleDetect(5) == true ) {
+	while ( this.predictedPosition.boundaryDetect() == true || this.predictedPosition.obstacleDetect(7.5) == true ) {
 		this.predictedPosition.subtract(this.predictionVec);
 		this.predictionVec.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
 		this.predictedPosition.add(this.predictionVec);		

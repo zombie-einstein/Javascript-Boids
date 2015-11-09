@@ -108,8 +108,8 @@ function resizeFunction() {
 	}
 }
 // Change the number of obstacles
-function changObstacles (){
-	if ( document.getElementById("obstacles").value > document.getElementById("obstacles").max ){
+function changeObstacles (){
+	if ( document.getElementById("obstacles").value >  10){
 		return; }
 	else{	
 		numObstacles = document.getElementById("obstacles").value;	
@@ -125,6 +125,7 @@ var maxSteering = 0.01;		// The maximum steering force allowed
 var detectionRange = 50;	// Range at which Boids become neigbours
 var collisionRange = 25;	// Range at which boid will be avoided
 var detectAngle = 16;		// Number of test vector angles for collision algorith
+var maxFormValue = document.getElementById("obstacles").max;
 var detectionAngle = Math.cos(3 * Math.PI / 4); 
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
