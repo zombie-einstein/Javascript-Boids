@@ -1,9 +1,61 @@
 'use strict';
 
+// ***** Variables *****
+
+// Canvas Elements
+var canvas = document.getElementById("myCanvas");
+var ctx = canvas.getContext("2d");
+ctx.canvas.width  = window.innerWidth;
+ctx.canvas.height = window.innerHeight-100;
+var xWidth = canvas.width;
+var yWidth = canvas.height;
+
+// Number of elements
+var numObstacles = document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
+var maxFormValue = document.getElementById("obstacles").max;
+var numBoids = 60;		// Number of Boids
+
+
+// Boid controls
+var maxVelocity = 2;		// Max velocity of the Boids
+var maxSteering = 0.02;		// The maximum steering force allowed
+var detectionRange = 50;	// Range at which Boids become neigbours
+var collisionRange = 25;	// Range at which boid will be avoided
+var detectAngle = 16;		// Number of test vector angles for collision algorith
+var detectionAngle = Math.cos(3 * Math.PI / 4); 
+var cohesionStrength = 1;
+var alignStrength = 1.5;
+var avoidStrength = 2;
+
+// Initialise arrays and variables
+var Boids = [];
+var Obstacles = [];
+var myVar;
+var stopped = true;
+var started = false;
+
+// Display initial boids and obstacles
+resetBoids();
+
 // ************ Functions ******************
 
 // Square of number
 function square(x){return x*x;}
+
+// Random initial velocity
+function randomVelocity(){
+	var x = ( Math.random()*2 - 1 ) * maxVelocity;
+	var y = ( Math.random()*2 - 1 ) * Math.sqrt( square(maxVelocity) - square(x));
+	return new vec(x,y);
+}
+
+// Random Initial position inside canvas
+function randomPosition(){
+	var x = Math.random()*(xWidth-1) +1;
+	var y = Math.random()*(yWidth-1) +1; 
+	return new vec(x,y);
+}
+
 // Neighbour check function
 function neighbourTest(){
 	// The arrangement of these loops means that neighbour checks are only
@@ -22,6 +74,7 @@ function neighbourTest(){
 					Boids[n].collisionAvgs(Boids[m],d); 
 					Boids[m].collisionAvgs(Boids[n],d);
 	}}}}}
+
 // Animation function
 function animate_b(){
 	ctx.clearRect(0,0,xWidth,yWidth);
@@ -33,31 +86,31 @@ function animate_b(){
 		Boids[n].move();
 		Boids[n].render();
 	}
-
 }
+
 // Reset Boids to random initial positions and velocities
 function resetBoids(){
 	ctx.clearRect(0,0,xWidth,yWidth);
 	makeObstacles();
 	for( var n = 0; n < numObstacles; n++){Obstacles[n].render();}
 	for( var n = 0; n < numBoids; n++ ){
-		Boids[n]= new boid();
-		var test = 0;
-		do {Boids[n].initial(); test++;}
+		Boids[n]= new boid(randomPosition().x,randomPosition().y,randomVelocity().x,randomVelocity().y);
 		// Check if boid is inside an obstacle
 		// Re-roll position if it is
-		while (Boids[n].position.obstacleDetect(collisionRange) === true);
+		while (Boids[n].position.obstacleDetect(collisionRange) === true){Boids[n].randomize();}
 		Boids[n].render();
 	}
 }
+
 // Run simulation function
 function startSim(){ 
 	if( started == false ){ 
-	myVar = setInterval (animate_b, 25); 
+	myVar = setInterval(animate_b, 25); 
 	started = true; 
 	stopped = false; }
 	else { return; }
 }
+
 // Pause Simulation function
 function pauseSim(){
 	if( stopped == false ){ 
@@ -65,29 +118,30 @@ function pauseSim(){
 	stopped = true;
 	started = false;}
 }
+
 // Add boid at mouse click
 function addBoid(event){
 	var mousePos = getMousePos(canvas, event);
 	if (mousePos.obstacleDetect(5) == true){return;}
-	var temp = new boid();
+	var temp = new boid(mousePos.x,mousePos.y,randomVelocity().x,randomVelocity().y);
 	Boids.push(temp);
-	Boids[Boids.length-1].initial();
-	Boids[Boids.length-1].position.x = mousePos.x;
-	Boids[Boids.length-1].position.y = mousePos.y;
 	Boids[Boids.length-1].render();
 	numBoids++;
 }
+
 // Mouse position relative to canvas
 function getMousePos(canvas, evt) {
         var rect = canvas.getBoundingClientRect();
 	var mousePos = new vec(evt.clientX - rect.left,evt.clientY - rect.top);
 	return mousePos;
 }
-// Generate circular obstacles for boids
+
+// Generate random circular obstacles for boids
 function makeObstacles() {
 	for (var n = 0; n < numObstacles; n++){
-		Obstacles[n] = new obstacle(Math.random()*80+20, Math.random()*(xWidth-1) +1, Math.random()*(yWidth-1) +1);
+		Obstacles[n] = new obstacle(Math.random()*80+20, randomPosition().x, randomPosition().y);
 	}}
+	
 // If the window is resized, resize the canvas and shift all the elements
 function resizeFunction() {
 	var xScaling = window.innerWidth / canvas.width ;
@@ -107,39 +161,18 @@ function resizeFunction() {
 		Boids[n].render();
 	}
 }
-// Change the number of obstacles
+
+// Change the number of obstacles from HTML input
 function changeObstacles (){
-	if ( document.getElementById("obstacles").value >  10){
-		return; }
+	if ( document.getElementById("obstacles").value >  10){ return; }
 	else{	
 		numObstacles = document.getElementById("obstacles").value;	
 		resetBoids();
 	}
 }
-//******* Running simulation starts here *************
 
-var numBoids = 60;		// Number of Boids
-var numObstacles = document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
-var maxVelocity = 2;		// Max velocity of the Boids
-var maxSteering = 0.01;		// The maximum steering force allowed
-var detectionRange = 50;	// Range at which Boids become neigbours
-var collisionRange = 25;	// Range at which boid will be avoided
-var detectAngle = 16;		// Number of test vector angles for collision algorith
-var maxFormValue = document.getElementById("obstacles").max;
-var detectionAngle = Math.cos(3 * Math.PI / 4); 
-var canvas = document.getElementById("myCanvas");
-var ctx = canvas.getContext("2d");
-ctx.canvas.width  = window.innerWidth;
-ctx.canvas.height = window.innerHeight-100;
-var xWidth = canvas.width;
-var yWidth = canvas.height;
-var Boids = [];
-var Obstacles = [];
-var myVar;
-var stopped = true;
-var started = false;
-
-resetBoids();
-
-
-
+// Color hue changer -- Taken from "Pimp Trizkit" on Stackflow
+function shadeColor2(color, percent) {   
+    var f=parseInt(color.slice(1),16),t=percent<0?0:255,p=percent<0?percent*-1:percent,R=f>>16,G=f>>8&0x00FF,B=f&0x0000FF;
+    return "#"+(0x1000000+(Math.round((t-R)*p)+R)*0x10000+(Math.round((t-G)*p)+G)*0x100+(Math.round((t-B)*p)+B)).toString(16).slice(1);
+}
