@@ -69,7 +69,7 @@ boid.prototype.render = function() {
 	ctx.lineTo(this.position.x+this.triangle[1].x,this.position.y+this.triangle[1].y);
 	ctx.lineTo(this.position.x+this.triangle[2].x,this.position.y+this.triangle[2].y);
 	ctx.fillStyle =  this.color;
-	ctx.fill();					
+	ctx.fill();				
 }
 
 // Reset the neighbour averages and counts
@@ -95,6 +95,7 @@ boid.prototype.collisionAvgs = function(neighbour,d){
 	var tempVec = new vec(0,0);
 	tempVec.assign(this.position);
 	tempVec.subtract(neighbour.position);
+	tempVec.setMagnitude(1);
 	// Contributions are weighted by their distance
 	// i.e. the closer the boid the stronger it's contribution
 	tempVec.scale(1/d);
@@ -114,7 +115,7 @@ boid.prototype.acceleration = function(){
 		this.steerAlign.maxLimit(maxSteering);
 		// Avoid calculation
 		if ( this.numCollisions > 0 ){
-			this.steerAvoid.setMagnitude(maxVelocity);
+			this.steerAvoid.setMagnitude(2*maxVelocity);
 			this.steerAvoid.subtract(this.velocity);
 			this.steerAvoid.maxLimit(maxSteering);
 		}
@@ -132,6 +133,10 @@ boid.prototype.acceleration = function(){
 	this.predictionVec.setMagnitude(maxVelocity);
 	this.predictionVec.subtract(this.velocity);
 	this.predictionVec.maxLimit(maxSteering);
-	this.predictionVec.scale(10);
+	this.predictionVec.scale(ostacleStrength);
 	this.accVec.add(this.predictionVec);
+}
+// Return vector to another boid
+boid.prototype.vecTo = function( subject ){
+	return new vec(subject.position.x-this.position.x, subject.position.y-this.position.y);
 }

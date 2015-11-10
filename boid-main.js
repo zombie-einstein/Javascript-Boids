@@ -15,17 +15,17 @@ var numObstacles = document.getElementById("obstacles").value;	// Number of circ
 var maxFormValue = document.getElementById("obstacles").max;
 var numBoids = 60;		// Number of Boids
 
-
 // Boid controls
 var maxVelocity = 2;		// Max velocity of the Boids
 var maxSteering = 0.02;		// The maximum steering force allowed
 var detectionRange = 50;	// Range at which Boids become neigbours
 var collisionRange = 25;	// Range at which boid will be avoided
 var detectAngle = 16;		// Number of test vector angles for collision algorith
-var detectionAngle = Math.cos(3 * Math.PI / 4); 
+var detectionAngle = Math.cos(3 * Math.PI / 4); // Vision cone angle
 var cohesionStrength = 1;
-var alignStrength = 1.5;
-var avoidStrength = 2;
+var alignStrength = 1;
+var avoidStrength = 2.5;
+var ostacleStrength = 5;
 
 // Initialise arrays and variables
 var Boids = [];
@@ -45,7 +45,7 @@ function square(x){return x*x;}
 // Random initial velocity
 function randomVelocity(){
 	var x = ( Math.random()*2 - 1 ) * maxVelocity;
-	var y = ( Math.random()*2 - 1 ) * Math.sqrt( square(maxVelocity) - square(x));
+	var y = ( Math.random()*2 - 1 ) * Math.sqrt( square(maxVelocity) - square(x)); // Ensures total velocity is less than max
 	return new vec(x,y);
 }
 
@@ -64,23 +64,27 @@ function neighbourTest(){
 	for ( var n = 0; n < numBoids-1; n++ ){
 	for ( var m = n+1; m < numBoids; m++ ){ 
 		// This checks that neighbours are both within a certain range
-		// Check angle is more involved as it requires checking the angle in both directions
 		var d = Boids[n].position.squareDistance(Boids[m].position);
 		if ( d < square(detectionRange) ){
-				Boids[n].neighbourAvgs(Boids[m]); 
-				Boids[m].neighbourAvgs(Boids[n]);
-				// Check if neighbour falls within collision angle
-				if ( d < square(collisionRange) && d > 0 ){
-					Boids[n].collisionAvgs(Boids[m],d); 
-					Boids[m].collisionAvgs(Boids[n],d);
-	}}}}}
+				// Check if neighbour is inside vision cone
+				if ( Boids[n].velocity.cosAngle(Boids[n].vecTo(Boids[m])) >  detectionAngle){
+					Boids[n].neighbourAvgs(Boids[m]);
+					if ( d < square(collisionRange) && d > 0 ){ Boids[n].collisionAvgs(Boids[m],d); }
+				}
+				// Check if neighbour is inside vision cone
+				if ( Boids[m].velocity.cosAngle(Boids[m].vecTo(Boids[n])) >  detectionAngle){
+					Boids[m].neighbourAvgs(Boids[n]);
+					if ( d < square(collisionRange) && d > 0 ){ Boids[m].collisionAvgs(Boids[n],d); }
+				}
+	}}}}
 
 // Animation function
 function animate_b(){
 	ctx.clearRect(0,0,xWidth,yWidth);
-	for( var n = 0; n < numObstacles; n++){Obstacles[n].render();}
+	for( var n = 0; n < numObstacles; n++){ Obstacles[n].render(); }
 	for( var n = 0; n < numBoids; n++ ){ Boids[n].reset(); }
 	neighbourTest();
+	document.getElementById("number").innerHTML = Boids[0].numNeighbours;
 	for( var n = 0; n < numBoids; n++ ){
 		Boids[n].acceleration();
 		Boids[n].move();
