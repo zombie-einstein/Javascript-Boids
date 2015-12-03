@@ -3,37 +3,51 @@
 
 // Boid Constructor
 function boid(x,y,vx,vy){
-	this.position = new vec(x,y);
-	this.velocity = new vec(vx,vy);
-	this.accVec = new vec(0,0);
-	this.predictionVec = new vec(0,0);
-	this.predictedPosition = new vec(0,0);
-	this.steerCohesion = new vec(0,0);
+	this.position 	= new vec(x,y);
+	this.velocity 	= new vec(vx,vy);
+	this.accVec 	= new vec(0,0);
+	this.predictionVecA = new vec(0,0);
+	this.predictionVecB = new vec(0,0);
+	this.predictedPositionA = new vec(0,0);
+	this.predictedPositionB = new vec(0,0);
+	this.steerCohesion 	= new vec(0,0);
 	this.steerAlign = new vec(0,0);
 	this.steerAvoid = new vec(0,0);
 	this.numNeighbours = 0;
 	this.numCollisions = 0;
+	this.alive = true;
 	this.triangle = [new vec(0,0), new vec(0,0), new vec(0,0)];
 	// Randomizes the boids tendency to turn left or right first
 	// when encountering a boundary / barrier
 	this.leftOrRight = Math.round(Math.random())*2 -1;
-	this.color = shadeColor2("#FF9900", Math.random()*0.4-0.2);
+	// Give boid a random shade
+	this.color = shadeColor2("#FF9900", Math.random()*0.3-0.15);
 }
 
 // Avoid the walls and circular obstacles
 boid.prototype.wallAvoid = function () {
-	this.predictionVec.assign(this.velocity);
-	this.predictionVec.setMagnitude(detectionRange);
+	this.predictionVecA.assign(this.velocity);
+	this.predictionVecB.assign(this.velocity);
+	this.predictionVecA.setMagnitude(detectionRange);
+	this.predictedPositionA.assign(this.position);
+	this.predictedPositionA.add(this.predictionVecA);
+	this.predictedPositionB.assign(this.position);
+	this.predictedPositionB.add(this.predictionVecB);
 	var r = 0;
-	this.predictedPosition.assign(this.position);
-	this.predictedPosition.add(this.predictionVec);
 	// This check is for the borders and also for circular obstacles
-	while ( this.predictedPosition.boundaryDetect() == true || this.predictedPosition.obstacleDetect(7.5) == true ) {
-		this.predictedPosition.subtract(this.predictionVec);
-		this.predictionVec.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
-		this.predictedPosition.add(this.predictionVec);		
+	while ( this.predictedPositionA.boundaryDetect() == true || this.predictedPositionA.obstacleDetect(5) == true ||  this.predictedPositionB.obstacleDetect(5) == true) {
+	//while ( this.predictedPosition.boundaryDetect() == true || this.circleTestB(detectionRange) == true ) {
+		this.predictedPositionA.subtract(this.predictionVecA);
+		this.predictionVecA.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
+		this.predictedPositionA.add(this.predictionVecA);
+		this.predictedPositionB.subtract(this.predictionVecB);
+		this.predictionVecB.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
+		this.predictedPositionB.add(this.predictionVecB);	
 		r += 1;
-		if (r > detectAngle-2 ){break;}	// Breaks out of loop if the boid can't find an exit (has checked all 2PI)!
+		if (r > detectAngle-1 ){
+		this.alive = false; //
+		this.color = '#ff0000';
+		break;}	// Breaks out of loop if the boid can't find an exit (has checked all 2PI)!
 	}	
 }
 
@@ -49,6 +63,10 @@ boid.prototype.move = function () {
 	this.velocity.add(this.accVec);
 	this.velocity.maxLimit(maxVelocity);
 	this.position.add(this.velocity);
+	// Hard wall against obstacles, stops boids if they try to enter an obstacle
+	if (this.position.obstacleDetect(5)){
+		this.position.subtract(this.velocity); 
+	}
 }
 // Work out triangle render points by scaling and rotating velocity vector
 boid.prototype.triVec = function() {
@@ -93,9 +111,7 @@ boid.prototype.neighbourAvgs = function(neighbour){
 boid.prototype.collisionAvgs = function(neighbour,d){ 
 	this.numCollisions += 1;	// increment number of neighbours
 	var tempVec = new vec(0,0);
-	tempVec.assign(this.position);
-	tempVec.subtract(neighbour.position);
-	tempVec.setMagnitude(1);
+	tempVec = neighbour.vecTo(this);
 	// Contributions are weighted by their distance
 	// i.e. the closer the boid the stronger it's contribution
 	tempVec.scale(1/d);
@@ -107,7 +123,7 @@ boid.prototype.acceleration = function(){
 	if ( this.numNeighbours > 0 ) {
 		// Cohesion Calculation
 		this.steerCohesion.subtract(this.position);
-		this.steerCohesion.setMagnitude(maxVelocity);
+		this.steerCohesion.maxLimit(maxVelocity);
 		this.steerCohesion.subtract(this.velocity);
 		this.steerCohesion.maxLimit(maxSteering);
 		// Alignment Calculation
@@ -115,8 +131,8 @@ boid.prototype.acceleration = function(){
 		this.steerAlign.maxLimit(maxSteering);
 		// Avoid calculation
 		if ( this.numCollisions > 0 ){
-			this.steerAvoid.setMagnitude(2*maxVelocity);
-			this.steerAvoid.subtract(this.velocity);
+			this.steerAvoid.setMagnitude(this.velocity.magnitude());
+			//this.steerAvoid.subtract(this.velocity);
 			this.steerAvoid.maxLimit(maxSteering);
 		}
 		// Scale steering contributions by arbitary weights
@@ -130,13 +146,52 @@ boid.prototype.acceleration = function(){
 	}
 	// Avoid the walls and objects and add effect to acceleration
 	this.wallAvoid();
-	this.predictionVec.setMagnitude(maxVelocity);
-	this.predictionVec.subtract(this.velocity);
-	this.predictionVec.maxLimit(maxSteering);
-	this.predictionVec.scale(ostacleStrength);
-	this.accVec.add(this.predictionVec);
+	this.predictionVecA.setMagnitude(maxVelocity);
+	this.predictionVecA.subtract(this.velocity);
+	this.predictionVecA.maxLimit(maxSteering);
+	this.predictionVecA.scale(ostacleStrength);
+	this.accVec.add(this.predictionVecA);
 }
 // Return vector to another boid
 boid.prototype.vecTo = function( subject ){
 	return new vec(subject.position.x-this.position.x, subject.position.y-this.position.y);
+}
+// Check if future velocity is in obstacle
+boid.prototype.circleTestA = function(range){
+	for( var m = 0; m < numObstacles; m++ ){
+		var vecToObstacle = new vec(0,0);
+		vecToObstacle.assign(Obstacles[m].centre);
+		vecToObstacle.subtract(this.position);
+		if ( vecToObstacle.dotProduct(vecToObstacle) < square(Obstacles[m].radius + range + 5) ) {
+			var predictedToObstacle = this.predictedPosition.squareDistance(Obstacles[m].centre);
+			if ( predictedToObstacle <= square(Obstacles[m].radius + 5) ){ return true; }
+			// This algorithm checks if the boids predicted position intersects an obstacle using area of triangles
+			var testArea =  range * (Obstacles[m].radius + 4);
+			var predictedArea = this.predictionVec.crossProduct(vecToObstacle);
+			if ( predictedArea <= testArea && predictedArea!= 0 && vecToObstacle.dotProduct(vecToObstacle) > 0){ return true; }
+		}
+	}
+	return false;
+}
+
+// Checks if Boids predicted trajectory intersects with circuar obstacle by solving quadratic equation
+boid.prototype.circleTestB = function(range){
+	for( var m = 0; m < numObstacles; m++ ){
+		var squareToObstacle = this.position.squareDistance(Obstacles[m].centre);
+		var predictedToObstacle = this.predictedPosition.squareDistance(Obstacles[m].centre);
+		if ( predictedToObstacle < square(Obstacles[m].radius + 5) ){ return true; }
+		else if ( squareToObstacle < square(Obstacles[m].radius + range + 5) ) {
+			var temp = new vec(0,0);
+			temp.assign(this.position);
+			temp.subtract(Obstacles[m].centre);
+			var det = square(this.predictionVec.dotProduct(temp))-this.predictionVec.dotProduct(this.predictionVec)*(temp.dotProduct(temp)-square(Obstacles[m].radius+5));
+			if ( det => 0 ) {
+				var quadPlus  = 0.5*(-2*this.predictionVec.dotProduct(temp)+2*Math.sqrt(det))/this.predictionVec.dotProduct(this.predictionVec);
+				var quadMinus = 0.5*(-2*this.predictionVec.dotProduct(temp)-2*Math.sqrt(det))/this.predictionVec.dotProduct(this.predictionVec);
+				if ( quadPlus < range && quadPlus > 0 ){return true;}
+				else if ( quadMinus < range && quadPlus > 0 ){return true;}
+			}
+		}
+	}
+	return false;
 }

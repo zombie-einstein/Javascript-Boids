@@ -6,13 +6,13 @@
 var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
-ctx.canvas.height = window.innerHeight-100;
+ctx.canvas.height = window.innerHeight; //-100;
 var xWidth = canvas.width;
 var yWidth = canvas.height;
 
 // Number of elements
-var numObstacles = document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
-var maxFormValue = document.getElementById("obstacles").max;
+var numObstacles = 2; //document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
+var maxFormValue = 50; //document.getElementById("obstacles").max;
 var numBoids = 60;		// Number of Boids
 
 // Boid controls
@@ -20,12 +20,12 @@ var maxVelocity = 2;		// Max velocity of the Boids
 var maxSteering = 0.02;		// The maximum steering force allowed
 var detectionRange = 50;	// Range at which Boids become neigbours
 var collisionRange = 25;	// Range at which boid will be avoided
-var detectAngle = 16;		// Number of test vector angles for collision algorith
+var detectAngle = 20;		// Number of test vector angles for collision algorith
 var detectionAngle = Math.cos(3 * Math.PI / 4); // Vision cone angle
 var cohesionStrength = 1;
 var alignStrength = 1;
-var avoidStrength = 2.5;
-var ostacleStrength = 5;
+var avoidStrength = 5;
+var ostacleStrength = 15;
 
 // Initialise arrays and variables
 var Boids = [];
@@ -34,7 +34,7 @@ var myVar;
 var stopped = true;
 var started = false;
 
-// Display initial boids and obstacles
+// Display initial boids and obstacles on loading page
 resetBoids();
 
 // ************ Functions ******************
@@ -84,10 +84,12 @@ function animate_b(){
 	for( var n = 0; n < numObstacles; n++){ Obstacles[n].render(); }
 	for( var n = 0; n < numBoids; n++ ){ Boids[n].reset(); }
 	neighbourTest();
-	document.getElementById("number").innerHTML = Boids[0].numNeighbours;
+	//document.getElementById("number").innerHTML = Boids[0].numNeighbours;
 	for( var n = 0; n < numBoids; n++ ){
-		Boids[n].acceleration();
-		Boids[n].move();
+		if ( Boids[n].alive == true ){
+			Boids[n].acceleration();
+			Boids[n].move();
+		}
 		Boids[n].render();
 	}
 }
@@ -151,7 +153,7 @@ function resizeFunction() {
 	var xScaling = window.innerWidth / canvas.width ;
 	var yScaling = ( window.innerHeight-100 ) / canvas.height ;
 	ctx.canvas.width  = window.innerWidth;
-	ctx.canvas.height = window.innerHeight-100;
+	ctx.canvas.height = window.innerHeight;//-100;
 	xWidth = canvas.width;
 	yWidth = canvas.height;
 	for( var n = 0; n < numObstacles; n++){
@@ -167,10 +169,10 @@ function resizeFunction() {
 }
 
 // Change the number of obstacles from HTML input
-function changeObstacles (){
-	if ( document.getElementById("obstacles").value >  10){ return; }
+function changeObstacles (plusMinus){
+	if ( numObstacles >  10){ return; }
 	else{	
-		numObstacles = document.getElementById("obstacles").value;	
+		numObstacles += plusMinus;	
 		resetBoids();
 	}
 }

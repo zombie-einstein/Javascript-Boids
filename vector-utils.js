@@ -31,6 +31,10 @@ vec.prototype.squareDistance = function (subject){
 vec.prototype.dotProduct = function (subject){
 	return this.x*subject.x + this.y*subject.y;
 }
+// Magnitude of cross product of 2-D vectors
+vec.prototype.crossProduct = function (subject){
+	return Math.abs( this.x*subject.y - this.y*subject.x);
+}
 // Cosine of angle between Vectors
 vec.prototype.cosAngle = function (subject){
 	return this.dotProduct(subject)/(this.magnitude() * subject.magnitude());
