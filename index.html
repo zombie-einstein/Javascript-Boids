@@ -27,8 +27,13 @@ Too bad your browser does not support the HTML5 canvas tag.
 <h2> Obstacles:  </h2>
 <button onclick="changeObstacles(1)">+</button>
 <button onclick="changeObstacles(-1)">-</button>
+<h2> Show Steering: </h2>
+<button onclick="showSteeringSwitchOn()">On</button>
+<button onclick="showSteeringSwitchOff()">Off</button>
+<h2> Boids: </h2>
+<p id="boidNumber" style="display:inline;"> </p>
+<button style="display:inline;" onclick="removeBoid()">-1</button>
 </div>
-
 
 <script src="function-utils.js"></script>
 <script src="vector-utils.js"></script>

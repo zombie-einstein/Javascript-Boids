@@ -37,6 +37,8 @@ canvas{	background-color: #E5F0FF;
 
 #wrapper:hover{	opacity: 1; }
 
+#removeBoid{display:inline;}
+
 html, body {	width:  100%;
 				height: 100%;
 				margin: 0px;
