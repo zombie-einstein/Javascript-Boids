@@ -1,73 +1,100 @@
 'use strict';
-//****************** Boid Class *********************
+//****************** Boid Class & associated functions ********************
 
 // Boid Constructor
 function boid(){
-	this.position 	= new vec(0,0);
-	this.velocity 	= new vec(0,0);
-	this.accVec 	= new vec(0,0);
-	this.predictionVecA = new vec(0,0);
-	this.predictionVecB = new vec(0,0);
-	this.predictedPositionA = new vec(0,0);
-	this.predictedPositionB = new vec(0,0);
-	this.steerCohesion 	= new vec(0,0);
-	this.steerAlign = new vec(0,0);
-	this.steerAvoid = new vec(0,0);
-	this.numNeighbours = 0;
-	this.numCollisions = 0;
-	this.alive = true;
-	this.triangle = [new vec(0,0), new vec(0,0), new vec(0,0)];
-	// Randomizes the boids tendency to turn left or right first
-	// when encountering a boundary / barrier
-	this.leftOrRight = Math.round(Math.random())*2 -1;
-	// Give boid a random shade
-	this.color = shadeColor2("#FF9900", Math.random()*0.3-0.15);
+	this.position 		= new vec(0,0);	// Boids position
+	this.velocity 		= new vec(0,0);	// Boids velocity
+	this.accVec 		= new vec(0,0); // Boids acceleration vector, newly calculated at each timestep
+	this.steerCohesion 	= new vec(0,0); // Steering vector to average position of neighbours
+	this.steerAlign 	= new vec(0,0);	// Steering vector to align boid velocity with neighbours
+	this.steerAvoid 	= new vec(0,0);	// Steering vector to avoid other boids
+	this.steerObstacle 	= new vec(0,0);	// Steering vector to avoid walls and obstacles
+	this.numNeighbours 	= 0;			// Count the boids neighbours
+	this.numCollisions 	= 0;			// Count the number of boids that are in collision range
+	this.numObstacles	= 0;			// Count the number of walls or obstacles to be avoided
+	this.alive 			= true;			// Status of boid
+	this.triangle 		= [new vec(0,0), new vec(0,0), new vec(0,0)];		// Points of triangle used to render boid
+	this.color 			= shadeColor2( "#FF9900", Math.random()*0.3 -0.15 );	// Give each boid a random shade from a base colour
 }
 
-// Avoid the walls and circular obstacles
-boid.prototype.wallAvoid = function () {
-	this.predictionVecA.assign(this.velocity);
-	this.predictionVecB.assign(this.velocity);
-	this.predictionVecA.setMagnitude(detectionRange);
-	this.predictedPositionA.assign(this.position);
-	this.predictedPositionA.add(this.predictionVecA);
-	this.predictedPositionB.assign(this.position);
-	this.predictedPositionB.add(this.predictionVecB);
-	var r = 0;
-	// This check is for the borders and also for circular obstacles
-	//while ( this.predictedPositionA.boundaryDetect() == true || this.predictedPositionA.obstacleDetect(5) == true ||  this.predictedPositionB.obstacleDetect(5) == true) {
-	while ( this.predictedPositionA.obstacleDetect(5) == true ||  this.predictedPositionB.obstacleDetect(5) == true) {
-	//while ( this.predictedPosition.boundaryDetect() == true || this.circleTestB(detectionRange) == true ) {
-		this.predictedPositionA.subtract(this.predictionVecA);
-		this.predictionVecA.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
-		this.predictedPositionA.add(this.predictionVecA);
-		this.predictedPositionB.subtract(this.predictionVecB);
-		this.predictionVecB.rotate(this.leftOrRight*Math.pow(-1,r) * (r+1) * 2*Math.PI/detectAngle);
-		this.predictedPositionB.add(this.predictionVecB);	
-		r += 1;
-		if (r > detectAngle-1 ){
-		this.alive = false; //
-		this.color = '#ff0000';
-		break;}	// Breaks out of loop if the boid can't find an exit (has checked all 2PI)!
-	}	
+// Avoid the circular obstacles
+boid.prototype.obstacleAvoid = function( offset, range ){
+	for ( var n = 0; n < numObstacles; n++ ){
+		var d = this.position.squareDistance( Obstacles[n].centre );
+		// First check if boid is in range of the obstacle
+		if ( d < square( range +offset +Obstacles[n].radius ) ){
+			var dToTangent 		= Math.sqrt( d +square( Obstacles[n].radius ) );	// Distance to the tangents of the obstacle
+			var vecToObstacle 	= new vec(Obstacles[n].centre.x -this.position.x, Obstacles[n].centre.y -this.position.y); //Vector from Boid to obstacle
+			var cosToTangent 	= Obstacles[n].radius /dToTangent;				// Cos of angle from centre of obstacle to tangent
+			var cosToVelocity 	= this.velocity.cosAngle( vecToObstacle );		// Cos of angle between velocity of boid and vector to obstacle
+			// Secondly check if Boid will eventually intercept obstacle
+			if ( cosToVelocity > cosToTangent ){
+				vecToObstacle.setMagnitude( Math.sqrt(d) -offset -Obstacles[n].radius );
+				// Generate temporary boid at obstacle boundary closest to boid
+				var boundVec 	= new vec( this.position.x +vecToObstacle.x, this.position.y +vecToObstacle.y );
+				// Add vector pointing away from obstacle boid to average vector
+				this.numObstacles ++;
+				this.steerObstacle.collisionAvgs( this, boundVec, range, this.numObstacles );
+			}
+		}
+	}
+}
+
+// Avoid walls
+boid.prototype.wallAvoid = function( offset, range ){
+	if ( this.position.x < offset +range && this.velocity.x < 0 ){
+			var boundVec = new vec( offset, this.position.y );
+			this.numObstacles ++;
+			this.steerObstacle.collisionAvgs( this, boundVec, range, this.numObstacles );
+		}
+	if ( this.position.x > xWidth -offset -range && this.velocity.x > 0 ){
+			var boundVec = new vec( xWidth -offset, this.position.y );
+			this.numObstacles ++;
+			this.steerObstacle.collisionAvgs( this, boundVec, range, this.numObstacles );
+		}
+	if ( this.position.y < offset +range && this.velocity.y < 0 ){
+			var boundVec = new vec( this.position.x, this.numObstacles );
+			this.numObstacles ++;
+			this.steerObstacle.collisionAvgs( this, boundVec, range, this.numObstacles );
+		}
+	if ( this.position.y > yWidth -offset -range && this.velocity.y > 0 ){
+			var boundVec = new vec( this.position.x, yWidth -offset );
+			this.numObstacles ++;
+			this.steerObstacle.collisionAvgs( this, boundVec, range, this.numObstacles );
+		}
+}
+
+// Adds vector that points away from vector to average
+vec.prototype.collisionAvgs = function( object, subject, range, count ){
+	var tempVec = new vec( object.position.x -subject.x, object.position.y -subject.y );
+	tempVec.setMagnitude( range -tempVec.magnitude() );
+	this.cumAvg( tempVec, count );
+}
+
+// Add 'neighbour' position and velocity to average
+boid.prototype.neighbourAvgs = function( neighbour ){ 
+	this.numNeighbours += 1;	// increment number of neighbours
+	this.steerCohesion.cumAvg(neighbour.position,this.numNeighbours);
+	this.steerAlign.cumAvg(neighbour.velocity,this.numNeighbours);
 }
 
 // Give boid random initial position and velocity
 boid.prototype.randomize = function () {
 	this.position = randomPosition();
-	this.velocity = randomVelocity(maxVelocity);		
+	this.velocity = randomVelocity( maxVelocity );		
 }
 
 // Update Boid position function 
 //( i.e. add acceleration to the velocity, and velocity to position )
 boid.prototype.move = function () {
 	this.velocity.add(this.accVec);
-	this.velocity.maxLimit(maxVelocity);
-	this.position.add(this.velocity);
+	this.velocity.maxLimit(maxVelocity);	// Double check that the velocity does not exceed the maximum velocity after acceleration
+	this.position.add(this.velocity);		
 	// Hard wall against obstacles, stops boids if they try to enter an obstacle
-	if (this.position.obstacleDetect(5)){
-		this.position.subtract(this.velocity); 
-	}
+	//if (this.position.obstacleDetect(5)){
+	//	this.position.subtract(this.velocity); 
+	//}
 }
 // Work out triangular boid render points by scaling and rotating velocity vector
 boid.prototype.triVec = function() {
@@ -91,12 +118,18 @@ boid.prototype.render = function() {
 	ctx.fill();				
 }
 
+// Draw steering vectors and vision range
 boid.prototype.drawSteering = function(){
 
 	ctx.beginPath();
-	ctx.arc(this.position.x,this.position.y,detectionRange,0,2*Math.PI);
-	ctx.strokeStyle = "rgba(255, 0, 0, 0.25)";;
+	ctx.arc( this.position.x, this.position.y, detectionRange, 0, 2*Math.PI );
+	ctx.strokeStyle = "rgba(255, 0, 0, 0.25)";
 	ctx.stroke();
+
+	ctx.beginPath();
+	ctx.arc( this.position.x, this.position.y, collisionRange, 0, 2*Math.PI );
+	ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+	ctx.fill();
 
 	if (this.numNeighbours > 0){
 		ctx.beginPath();
@@ -118,6 +151,13 @@ boid.prototype.drawSteering = function(){
 		ctx.strokeStyle = '#00ff00';	// Green
 		ctx.stroke();
 	}
+	if (this.numObstacles > 0){
+		ctx.beginPath();
+		ctx.moveTo(this.position.x,this.position.y);
+		ctx.lineTo(this.position.x+this.steerObstacle.x,this.position.y+this.steerObstacle.y)
+		ctx.strokeStyle = '#00ff00';	// Green
+		ctx.stroke();
+	}
 }
 
 // Reset the neighbour averages and counts
@@ -126,67 +166,62 @@ boid.prototype.reset = function() {
 	this.steerCohesion.reset();
 	this.steerAlign.reset();
 	this.steerAvoid.reset();
-	this.numNeighbours = 0;
-	this.numCollisions = 0;
-}
-
-// Add 'neighbour' position and velocity to average
-boid.prototype.neighbourAvgs = function(neighbour){ 
-	this.numNeighbours += 1;	// increment number of neighbours
-	this.steerCohesion.cumAvg(neighbour.position,this.numNeighbours);
-	this.steerAlign.cumAvg(neighbour.velocity,this.numNeighbours);
-}
-
-// Adds position of neighbours that are too close to average
-boid.prototype.collisionAvgs = function(neighbour,d){ 
-	this.numCollisions += 1;	// increment number of neighbours
-	var tempVec = new vec(0,0);
-	tempVec = neighbour.vecTo(this);
-	// Contributions are weighted by their distance
-	// i.e. the closer the boid the stronger it's contribution
-	//tempVec.setMagnitude((0.0001/square(collisionRange))*((square(collisionRange)-d)/(0.0001+d)));
-	tempVec.setMagnitude(collisionRange - Math.sqrt(d))
-	this.steerAvoid.cumAvg(tempVec,this.numCollisions);
+	this.steerObstacle.reset();
+	this.numNeighbours	= 0;
+	this.numCollisions	= 0;
+	this.numObstacles	= 0;
 }
 
 // Calculate new velocity based on neighbours
 boid.prototype.acceleration = function(){
+	
 	if ( this.numNeighbours > 0 ) {
 		// Cohesion Calculation
-		this.steerCohesion.subtract(this.position);
-		this.steerCohesion.maxLimit(maxVelocity);
-		this.steerCohesion.subtract(this.velocity);
-		this.steerCohesion.maxLimit(maxSteering);
+		this.steerCohesion.subtract(this.position);	// Vector now points to average neighbour position
+		this.steerCohesion.maxLimit(maxVelocity);	// Limit the size of this vector
+		this.steerCohesion.subtract(this.velocity);	// Steer velocity towards cohesion vector
+		this.steerCohesion.maxLimit(maxSteering);	// Limit by steering strength
 		// Alignment Calculation
-		this.steerAlign.subtract(this.velocity); // Does this need scaling? It is already an average and so can't exceed max velocity anyway?
-		this.steerAlign.maxLimit(maxSteering);
+		this.steerAlign.subtract(this.velocity);	// Steering vector towards neighbour average velocity
+		this.steerAlign.maxLimit(maxSteering);		// Limit to maximium steering
 		// Scale steering contributions by arbitary weights
-		this.steerCohesion.setMagnitude(cohesionStrength);
-		this.steerAlign.setMagnitude(alignStrength);
+		this.steerCohesion.scale(cohesionStrength);
+		this.steerAlign.scale(alignStrength);
 	}
-	// Avoid calculation
+	
+	// Avoid neighbour calculation
 	if ( this.numCollisions > 0 ){
-		this.steerAvoid.subtract(this.velocity);
-		this.steerAvoid.maxLimit(maxSteering);
+		//this.steerAvoid.subtract(this.velocity);	// Steering vector from velocity
+		//this.steerAvoid.maxLimit(maxVelocity);		// Limit avoid vector to max velocity
+		this.steerAvoid.maxLimit(maxSteering);		// Limit steering vector to max steering
 		// Scale steering contributions by arbitary weights
-		this.steerAvoid.setMagnitude(avoidStrength);
+		this.steerAvoid.scale(avoidStrength);
 	}
+	
+	// Avoid obstacles calculation
+	if ( this.numObstacles > 0 ){
+		//this.steerObstacle.subtract(this.velocity);	// Steering vector from velocity
+		this.steerObstacle.maxLimit(maxSteering);	// Limit steering vector to max steering
+		// Scale steering contributions by arbitary weights
+		this.steerObstacle.scale(obstacleStrength);
+	}
+	
+	var speedUp = new vec(this.velocity.x,this.velocity.y);
+	speedUp.setMagnitude(maxVelocity);
+	speedUp.subtract(this.velocity);
+	speedUp.maxLimit(maxSteering);
+	speedUp.scale(speedUpStrength);
 	// Calculate overall acceleration due to neighbours
+	this.accVec.add(speedUp);
 	this.accVec.add(this.steerCohesion);
 	this.accVec.add(this.steerAlign);
 	this.accVec.add(this.steerAvoid);
-	// Avoid the walls and objects and add effect to acceleration
-	this.wallAvoid();
-	this.predictionVecA.setMagnitude(maxVelocity);
-	this.predictionVecA.subtract(this.velocity);
-	this.predictionVecA.maxLimit(maxSteering);
-	this.predictionVecA.scale(ostacleStrength);
-	this.accVec.add(this.predictionVecA);
+	this.accVec.add(this.steerObstacle);
 }
 
 // Return vector to another boid
 boid.prototype.vecTo = function( subject ){
-	return new vec(subject.position.x-this.position.x, subject.position.y-this.position.y);
+	return new vec(subject.position.x -this.position.x, subject.position.y -this.position.y);
 }
 
 // Neighbour check function
@@ -202,80 +237,24 @@ function neighbourTest(){
 				// Check if neighbour is inside vision cone
 				if ( Boids[n].velocity.cosAngle(Boids[n].vecTo(Boids[m])) >  detectionAngle){
 					Boids[n].neighbourAvgs(Boids[m]);
-					if ( d < square(collisionRange) && d > 0 ){ Boids[n].collisionAvgs(Boids[m],d); }
+					if ( d < square(collisionRange) ){
+						Boids[n].numCollisions ++;
+						Boids[n].steerAvoid.collisionAvgs( Boids[n], Boids[m].position, collisionRange, Boids[n].numCollisions ); 
+					}
 				}
 				// Check if neighbour is inside vision cone
 				if ( Boids[m].velocity.cosAngle(Boids[m].vecTo(Boids[n])) >  detectionAngle){
 					Boids[m].neighbourAvgs(Boids[n]);
-					if ( d < square(collisionRange) && d > 0 ){ Boids[m].collisionAvgs(Boids[n],d); }
+					if ( d < square(collisionRange) ){
+						Boids[m].numCollisions ++;
+						Boids[m].steerAvoid.collisionAvgs( Boids[m], Boids[n].position, collisionRange, Boids[m].numCollisions ); 
+					}
 				}
-	}}
+	}} //subject, range, avoidVector, count
 }
 	for ( var n = 0; n < numBoids; n++ ){
-		if ( Boids[n].position.x < 5 + collisionRange && Boids[n].velocity.x < 0){
-			var boundVec = new boid();
-			boundVec.position.x = 5;
-			boundVec.position.y = Boids[n].position.y;
-			Boids[n].collisionAvgs(boundVec,square(Boids[n].position.x - 5));
-		}
-		if ( Boids[n].position.x > xWidth - 5 - collisionRange && Boids[n].velocity.x > 0 ){
-			var boundVec = new boid();
-			boundVec.position.x = xWidth - 5;
-			boundVec.position.y = Boids[n].position.y;
-			Boids[n].collisionAvgs(boundVec,square(Boids[n].position.x - xWidth +5));
-		}
-		if ( Boids[n].position.y < 5 + collisionRange &&  Boids[n].velocity.y < 0 ){
-			var boundVec = new boid();
-			boundVec.position.x = Boids[n].position.x;
-			boundVec.position.y = 5;
-			Boids[n].collisionAvgs(boundVec,square(Boids[n].position.y -5));
-		}
-		if ( Boids[n].position.y > yWidth - 5 - collisionRange && Boids[n].velocity.y > 0 ){
-			var boundVec = new boid();
-			boundVec.position.x = Boids[n].position.x;
-			boundVec.position.y = yWidth - 5;
-			Boids[n].collisionAvgs(boundVec,square(Boids[n].position.y - yWidth +5));
-		}
+		Boids[n].obstacleAvoid( 5, detectionRange );
+		Boids[n].wallAvoid( 5, detectionRange );
 	}
 
-}
-
-// Check if future velocity is in obstacle
-boid.prototype.circleTestA = function(range){
-	for( var m = 0; m < numObstacles; m++ ){
-		var vecToObstacle = new vec(0,0);
-		vecToObstacle.assign(Obstacles[m].centre);
-		vecToObstacle.subtract(this.position);
-		if ( vecToObstacle.dotProduct(vecToObstacle) < square(Obstacles[m].radius + range + 5) ) {
-			var predictedToObstacle = this.predictedPosition.squareDistance(Obstacles[m].centre);
-			if ( predictedToObstacle <= square(Obstacles[m].radius + 5) ){ return true; }
-			// This algorithm checks if the boids predicted position intersects an obstacle using area of triangles
-			var testArea =  range * (Obstacles[m].radius + 4);
-			var predictedArea = this.predictionVec.crossProduct(vecToObstacle);
-			if ( predictedArea <= testArea && predictedArea!= 0 && vecToObstacle.dotProduct(vecToObstacle) > 0){ return true; }
-		}
-	}
-	return false;
-}
-
-// Checks if Boids predicted trajectory intersects with circuar obstacle by solving quadratic equation
-boid.prototype.circleTestB = function(range){
-	for( var m = 0; m < numObstacles; m++ ){
-		var squareToObstacle = this.position.squareDistance(Obstacles[m].centre);
-		var predictedToObstacle = this.predictedPosition.squareDistance(Obstacles[m].centre);
-		if ( predictedToObstacle < square(Obstacles[m].radius + 5) ){ return true; }
-		else if ( squareToObstacle < square(Obstacles[m].radius + range + 5) ) {
-			var temp = new vec(0,0);
-			temp.assign(this.position);
-			temp.subtract(Obstacles[m].centre);
-			var det = square(this.predictionVec.dotProduct(temp))-this.predictionVec.dotProduct(this.predictionVec)*(temp.dotProduct(temp)-square(Obstacles[m].radius+5));
-			if ( det => 0 ) {
-				var quadPlus  = 0.5*(-2*this.predictionVec.dotProduct(temp)+2*Math.sqrt(det))/this.predictionVec.dotProduct(this.predictionVec);
-				var quadMinus = 0.5*(-2*this.predictionVec.dotProduct(temp)-2*Math.sqrt(det))/this.predictionVec.dotProduct(this.predictionVec);
-				if ( quadPlus < range && quadPlus > 0 ){return true;}
-				else if ( quadMinus < range && quadPlus > 0 ){return true;}
-			}
-		}
-	}
-	return false;
 }

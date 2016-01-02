@@ -7,40 +7,40 @@ var canvas = document.getElementById("myCanvas");
 var ctx = canvas.getContext("2d");
 ctx.canvas.width  = window.innerWidth;
 ctx.canvas.height = window.innerHeight;
-var xWidth = canvas.width;	// Get canvas width (full size of browser window)
-var yWidth = canvas.height;	// Get canvas height
+var xWidth = canvas.width;		// Get canvas width (full size of browser window)
+var yWidth = canvas.height;		// Get canvas height
 
 // Number of elements
-var numObstacles = 2;	//document.getElementById("obstacles").value;	// Number of circular obstacles on canvas
-var maxFormValue = 50;	//document.getElementById("obstacles").max;
-var numBoids = 60;		// Number of Boids
+var numObstacles 		= 2;	// Initial Number of circular obstacles on canvas
+var numBoids 			= 50;	// Initial Number of Boids
+var maxNumBoids			= 500;	// Max possible numer of Boids
 
 // Obstacle control
-var minObstacleSize = 20;
-var maxObstacleSize = 60;
+var minObstacleSize 	= 20;
+var maxObstacleSize 	= 60;
 
-// Boid controls
-var boidSize	= 5;		// Length of boids side
-var maxVelocity = 2;		// Max velocity of the Boids
-var maxSteering = 0.1;		// The maximum steering force allowed
-var detectionRange = 50;	// Range at which Boids become neigbours
-var collisionRange = 25;	// Range at which boids and obstacles will be avoided
-var detectAngle = 20;		// Number of test vector angles for collision algorithm
-var detectionAngle = Math.cos(3 * Math.PI / 4); // Vision cone angle of boid
-var cohesionStrength = 0.1;	
-var alignStrength = 0.2;
-var avoidStrength = 0.5;
-var ostacleStrength = 15;
+// Boid control parameters
+var boidSize			= 5;	// Length of boids side
+var maxVelocity 		= 2;	// Max velocity of the Boids
+var maxSteering 		= 0.1;	// The maximum steering force allowed
+var detectionRange 		= 50;	// Range at which Boids become neigbours
+var collisionRange 		= 25;	// Range at which boids and obstacles will be avoided
+var detectionAngle 		= Math.cos( 1 * Math.PI / 2 ); // Cos of vision cone angle of boid (Pre-calculate here and compare cosine values later)
+var cohesionStrength	= 0.1;	
+var alignStrength 		= 0.5;
+var avoidStrength 		= 0.75;
+var obstacleStrength 	= 1.2;
+var speedUpStrength		= 0.5;
 
 // Initialise arrays and variables
-var Boids = [];			// Array of boid structures
-var Obstacles = [];		// Array of obsctacle structures
-var timeStep;			// Time step variable for animate			
-var stopped = true;		// Pause switch (initialised as true)
-var started = false;	// Start switch (initialised as false)
-var displaySteering = false; // Display steering vectors switch, initialize as false
+var Boids 			= [];		// Array of boid structures
+var Obstacles 		= [];		// Array of obsctacle structures
+var timeStep;					// Declare time step variable for animate			
+var stopped 		= true;		// Pause switch (initialised as true)
+var started 		= false;	// Start switch (initialised as false)
+var displaySteering = false;	// Display steering vectors switch, initialize as false
 
-// Display initial boids and obstacles on loading page
+// Display initial boids and obstacles after loading page
 resetBoids(); 
 
 // ************ Functions ******************
@@ -51,7 +51,7 @@ function square(x){return x*x;}
 // Return random initial velocity up to a max magnitude
 function randomVelocity(max){
 	var x = ( Math.random()*2 - 1 ) * max;
-	var y = ( Math.random()*2 - 1 ) * Math.sqrt( square(max) - square(x)); // Ensures total velocity is less than max
+	var y = ( Math.random()*2 - 1 ) * Math.sqrt( square(max) - square(x)); // Ensures total velocity magnitude is less than max
 	return new vec(x,y);
 }
 
@@ -112,7 +112,7 @@ function pauseSim(){
 }
 
 // Add boid at mouse click
-function addBoid(event){
+function addBoidAtClick(event){
 	var mousePos = getMousePos(canvas, event);
 	var mouseVec = new vec(mousePos.x,mousePos.y)
 	if (mousePos.obstacleDetect(5) == true){return;}
@@ -126,12 +126,35 @@ function addBoid(event){
 }
 
 // Remove boid after button use
-function removeBoid(){
+function removeBoid( number ){
 	if (numBoids == 0){return;}
 	else{
-		Boids.pop();
-		numBoids--;
+		var n = 0;
+		while ( n < number && numBoids > 0 ){
+			n 		 ++;
+			numBoids --;
+			Boids.pop();
+		}
+		animate();
 		document.getElementById("boidNumber").innerHTML = numBoids;
+	}
+}
+
+function addBoid( number ){
+	if (numBoids == 500){return;}
+	else{
+		var n = 0;
+		while ( n < number && numBoids < 500 ){
+			n 		 ++;
+			numBoids ++;
+			var tempBoid = new boid();
+			tempBoid.randomize();
+			// Check if boid is inside an obstacle, Re-roll position if it is
+			while (tempBoid.position.obstacleDetect(collisionRange) === true){ tempBoid.randomize(); }
+			Boids.push(tempBoid);
+		}
+		animate();
+		document.getElementById("boidNumber").innerHTML = numBoids;	
 	}
 }
 

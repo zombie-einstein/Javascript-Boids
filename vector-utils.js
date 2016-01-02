@@ -47,7 +47,7 @@ vec.prototype.cosAngle = function (subject){
 	return this.dotProduct(subject)/(this.magnitude() * subject.magnitude());
 }
 
-// Add vector to a cumilative average (used for boid calculation
+// Add vector to a cumilative average (used for boid calculation)
 vec.prototype.cumAvg = function(subject,count){
 	this.x = this.x*(count-1)/count + subject.x/count;
 	this.y = this.y*(count-1)/count + subject.y/count;
