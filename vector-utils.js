@@ -39,7 +39,7 @@ vec.prototype.dotProduct = function (subject){
 
 // Magnitude of cross product of 2-D vectors
 vec.prototype.crossProduct = function (subject){
-	return Math.abs( this.x*subject.y - this.y*subject.x);
+	return  this.x*subject.y - this.y*subject.x;
 }
 
 // Cosine of angle between Vectors

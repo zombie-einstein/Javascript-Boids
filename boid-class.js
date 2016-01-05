@@ -88,7 +88,7 @@ boid.prototype.randomize = function () {
 // Update Boid position function 
 //( i.e. add acceleration to the velocity, and velocity to position )
 boid.prototype.move = function () {
-	this.velocity.add(this.accVec);
+	//this.velocity.add(this.accVec);
 	this.velocity.maxLimit(maxVelocity);	// Double check that the velocity does not exceed the maximum velocity after acceleration
 	this.position.add(this.velocity);		
 	// Hard wall against obstacles, stops boids if they try to enter an obstacle
@@ -179,11 +179,11 @@ boid.prototype.acceleration = function(){
 		// Cohesion Calculation
 		this.steerCohesion.subtract(this.position);	// Vector now points to average neighbour position
 		this.steerCohesion.maxLimit(maxVelocity);	// Limit the size of this vector
-		this.steerCohesion.subtract(this.velocity);	// Steer velocity towards cohesion vector
+		//this.steerCohesion.subtract(this.velocity);	// Steer velocity towards cohesion vector
 		this.steerCohesion.maxLimit(maxSteering);	// Limit by steering strength
 		// Alignment Calculation
-		this.steerAlign.subtract(this.velocity);	// Steering vector towards neighbour average velocity
-		this.steerAlign.maxLimit(maxSteering);		// Limit to maximium steering
+		//this.steerAlign.subtract(this.velocity);	// Steering vector towards neighbour average velocity
+		//this.steerAlign.maxLimit(maxSteering);		// Limit to maximium steering
 		// Scale steering contributions by arbitary weights
 		this.steerCohesion.scale(cohesionStrength);
 		this.steerAlign.scale(alignStrength);
@@ -192,8 +192,8 @@ boid.prototype.acceleration = function(){
 	// Avoid neighbour calculation
 	if ( this.numCollisions > 0 ){
 		//this.steerAvoid.subtract(this.velocity);	// Steering vector from velocity
-		//this.steerAvoid.maxLimit(maxVelocity);		// Limit avoid vector to max velocity
-		this.steerAvoid.maxLimit(maxSteering);		// Limit steering vector to max steering
+		this.steerAvoid.maxLimit(maxVelocity);		// Limit avoid vector to max velocity
+		//this.steerAvoid.maxLimit(maxSteering);		// Limit steering vector to max steering
 		// Scale steering contributions by arbitary weights
 		this.steerAvoid.scale(avoidStrength);
 	}
@@ -201,22 +201,48 @@ boid.prototype.acceleration = function(){
 	// Avoid obstacles calculation
 	if ( this.numObstacles > 0 ){
 		//this.steerObstacle.subtract(this.velocity);	// Steering vector from velocity
-		this.steerObstacle.maxLimit(maxSteering);	// Limit steering vector to max steering
+		this.steerObstacle.maxLimit(maxVelocity);	// Limit steering vector to max steering
 		// Scale steering contributions by arbitary weights
 		this.steerObstacle.scale(obstacleStrength);
 	}
 	
-	var speedUp = new vec(this.velocity.x,this.velocity.y);
-	speedUp.setMagnitude(maxVelocity);
-	speedUp.subtract(this.velocity);
-	speedUp.maxLimit(maxSteering);
-	speedUp.scale(speedUpStrength);
+	// Speed up vector steering
+	//var speedUp = new vec(this.velocity.x,this.velocity.y);
+	//speedUp.setMagnitude(maxVelocity);
+	//speedUp.subtract(this.velocity);
+	//speedUp.maxLimit(maxSteering);
+	//speedUp.scale(speedUpStrength);
+	
+
 	// Calculate overall acceleration due to neighbours
-	this.accVec.add(speedUp);
-	this.accVec.add(this.steerCohesion);
-	this.accVec.add(this.steerAlign);
-	this.accVec.add(this.steerAvoid);
-	this.accVec.add(this.steerObstacle);
+	//this.accVec.add(speedUp);
+	//this.accVec.add(this.steerCohesion);
+	//this.accVec.add(this.steerAlign);
+	//this.accVec.add(this.steerAvoid);
+	//this.accVec.add(this.steerObstacle);
+
+	if ( this.numNeighbours > 0 || this.numCollisions > 0 || this.numObstacles > 0 ){
+		var desiredVec = new vec(0,0);
+		desiredVec.assign( this.steerCohesion );
+		desiredVec.add( this.steerAlign );
+		desiredVec.add( this.steerAvoid );
+		desiredVec.add( this.steerObstacle );
+
+		if ( desiredVec.cosAngle( this.velocity ) > cosMaxSteerAngle ){
+			this.velocity.assign( desiredVec );
+			this.velocity.setMagnitude( maxVelocity );
+		}
+		else{
+			if ( this.velocity.crossProduct( desiredVec ) > 0 ){
+				//document.getElementById("testValues").innerHTML = this.velocity.crossProduct( desiredVec );
+				this.velocity.rotate( maxSteerAngle );
+			}
+			else{
+				this.velocity.rotate( -maxSteerAngle );
+			}
+
+		}
+	}
 }
 
 // Return vector to another boid

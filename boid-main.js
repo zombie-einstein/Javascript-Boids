@@ -27,10 +27,12 @@ var detectionRange 		= 50;	// Range at which Boids become neigbours
 var collisionRange 		= 25;	// Range at which boids and obstacles will be avoided
 var detectionAngle 		= Math.cos( 1 * Math.PI / 2 ); // Cos of vision cone angle of boid (Pre-calculate here and compare cosine values later)
 var cohesionStrength	= 0.1;	
-var alignStrength 		= 0.5;
-var avoidStrength 		= 0.75;
-var obstacleStrength 	= 1.2;
-var speedUpStrength		= 0.5;
+var alignStrength 		= 0.2;
+var avoidStrength 		= 0.3;
+var obstacleStrength 	= 0.4;
+//var speedUpStrength		= 0.2;
+var maxSteerAngle 		= Math.PI / 20;
+var cosMaxSteerAngle	= Math.cos( maxSteerAngle );
 
 // Initialise arrays and variables
 var Boids 			= [];		// Array of boid structures
@@ -69,8 +71,8 @@ function animate(){
 	for( var n = 0; n < numBoids; n++ ){ Boids[n].reset(); }
 	neighbourTest();
 	for( var n = 0; n < numBoids; n++ ){
-		if (displaySteering == true ){Boids[n].drawSteering();}
-		if ( Boids[n].alive == true ){
+		if ( displaySteering == true ){Boids[n].drawSteering();}
+		if ( Boids[n].alive  == true ){
 			Boids[n].acceleration();
 			Boids[n].move();
 		}
@@ -82,12 +84,12 @@ function animate(){
 function resetBoids(){
 	ctx.clearRect(0,0,xWidth,yWidth);
 	makeObstacles();
-	for( var n = 0; n < numObstacles; n++){Obstacles[n].render();}
-	for( var n = 0; n < numBoids; n++ ){
+	for( var n = 0; n < numObstacles; n++ ){Obstacles[n].render();}
+	for( var n = 0; n < numBoids; 	  n++ ){
 		Boids[n] = new boid();
 		Boids[n].randomize();
 		// Check if boid is inside an obstacle, Re-roll position if it is
-		while (Boids[n].position.obstacleDetect(collisionRange) === true){Boids[n].randomize();}
+		while (Boids[n].position.obstacleDetect(collisionRange) === true){ Boids[n].randomize(); }
 		Boids[n].render();
 	}
 	animate();
@@ -97,35 +99,35 @@ function resetBoids(){
 // Run simulation function
 function startSim(){ 
 	if( started == false ){ 
-	timeStep = setInterval(animate, 25); 
-	started = true; 
-	stopped = false; }
+	timeStep = setInterval( animate, 25 ); 
+	started  = true; 
+	stopped  = false; }
 	else { return; }
 }
 
 // Pause Simulation function
 function pauseSim(){
 	if( stopped == false ){ 
-	clearInterval(timeStep);
+	clearInterval( timeStep );
 	stopped = true;
 	started = false;}
 }
 
 // Add boid at mouse click
 function addBoidAtClick(event){
-	var mousePos = getMousePos(canvas, event);
-	var mouseVec = new vec(mousePos.x,mousePos.y)
-	if (mousePos.obstacleDetect(5) == true){return;}
-	var temp = new boid();
-	temp.position = mouseVec;
-	temp.velocity = randomVelocity(maxVelocity);
+	var mousePos 	= getMousePos( canvas, event );
+	var mouseVec 	= new vec( mousePos.x, mousePos.y )
+	if ( mousePos.obstacleDetect(5) == true ){ return; }
+	var temp 	 	= new boid();
+	temp.position 	= mouseVec;
+	temp.velocity 	= randomVelocity( maxVelocity );
 	Boids.push(temp);
 	Boids[Boids.length-1].render();
 	numBoids++;
 	document.getElementById("boidNumber").innerHTML = numBoids;
 }
 
-// Remove boid after button use
+// Remove boids after button use
 function removeBoid( number ){
 	if (numBoids == 0){return;}
 	else{
