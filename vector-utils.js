@@ -88,15 +88,20 @@ vec.prototype.rotate = function(angle){
 }
 
 // Check if the vector falls outside the boundary of the canvas
-vec.prototype.boundaryDetect = function(){
-	if ( this.x > xWidth-5 || this.x < 5 || this.y > yWidth-5 || this.y < 5 ){ return true; }
+vec.prototype.boundaryDetect = function( offset ){
+	if ( this.x > xWidth-offset || this.x < offset || this.y > yWidth-offset || this.y < offset ){ return true; }
 	return false;
 }
 
 // Check if the vector is inside a round obstacle, return true if it is
-vec.prototype.obstacleDetect = function(offest){
+vec.prototype.obstacleDetect = function( offest ){
 	for( var m = 0; m < numObstacles; m++ ){
 		if ( this.squareDistance(Obstacles[m].centre) < square(Obstacles[m].radius + offest) ){ return true; }
 	}
 	return false;
+}
+
+// Return new sum of vectors
+vec.prototype.sum = function( b ){
+	return new vec( this.x + b.x, this.y + b.y );
 }

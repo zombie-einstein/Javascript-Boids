@@ -21,18 +21,21 @@ var maxObstacleSize 	= 60;
 
 // Boid control parameters
 var boidSize			= 5;	// Length of boids side
-var maxVelocity 		= 2;	// Max velocity of the Boids
-var maxSteering 		= 0.1;	// The maximum steering force allowed
+var maxVelocity 		= 1.5;	// Max velocity of the Boids
+var maxSteering 		= 0.2;	// The maximum steering force allowed
 var detectionRange 		= 50;	// Range at which Boids become neigbours
 var collisionRange 		= 25;	// Range at which boids and obstacles will be avoided
-var detectionAngle 		= Math.cos( 1 * Math.PI / 2 ); // Cos of vision cone angle of boid (Pre-calculate here and compare cosine values later)
+var detectionAngle		= 2*Math.PI / 3;
+var cosDetectionAngle 	= Math.cos( detectionAngle ); // Cos of vision cone angle of boid (Pre-calculate here and compare cosine values later)
+var eyeDivisions		= 21;
 var cohesionStrength	= 0.1;	
-var alignStrength 		= 0.2;
-var avoidStrength 		= 0.3;
-var obstacleStrength 	= 0.4;
-//var speedUpStrength		= 0.2;
+var alignStrength 		= 0.1;
+var avoidStrength 		= 0.4;
+var obstacleStrength 	= 0.7;
+var speedUpStrength		= 0.0001;
 var maxSteerAngle 		= Math.PI / 20;
 var cosMaxSteerAngle	= Math.cos( maxSteerAngle );
+var maxVelocityChange	= 0.1;
 
 // Initialise arrays and variables
 var Boids 			= [];		// Array of boid structures
@@ -70,8 +73,7 @@ function animate(){
 	for( var n = 0; n < numObstacles; n++){ Obstacles[n].render(); }
 	for( var n = 0; n < numBoids; n++ ){ Boids[n].reset(); }
 	neighbourTest();
-	for( var n = 0; n < numBoids; n++ ){
-		if ( displaySteering == true ){Boids[n].drawSteering();}
+	for( var n = 0; n < numBoids; n++ ){ 
 		if ( Boids[n].alive  == true ){
 			Boids[n].acceleration();
 			Boids[n].move();
@@ -92,9 +94,12 @@ function resetBoids(){
 		while (Boids[n].position.obstacleDetect(collisionRange) === true){ Boids[n].randomize(); }
 		Boids[n].render();
 	}
-	animate();
+	//animate();
 	document.getElementById("boidNumber").innerHTML = numBoids;
 }
+
+// Step simulation
+function stepSim(){ animate(); }
 
 // Run simulation function
 function startSim(){ 
